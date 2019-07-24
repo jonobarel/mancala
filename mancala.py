@@ -8,17 +8,17 @@ PLAYER2_BANK: int = 13
 
 class Mancala:
 
-    def __init__(self, player1_name='Player1', player2_name='Player2'):
+    def __init__(self, player1_name='Player1', player2_name='Player2', random_start_player=False):
         random.seed()
 
         # starting setup
         self._pits = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
-        #self._pits = [2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 0]
+        # self._pits = [2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 0]
         self._round = 1
         self._players = [player1_name, player2_name]
 
         # current_player denotes whose turn it is
-        self._starting_player = random.randint(PLAYER1, PLAYER2)
+        self._starting_player = PLAYER1 if not random_start_player else random.randint(PLAYER1, PLAYER2)
         self._current_player = self._starting_player
         self._game_over = False
 
@@ -33,10 +33,15 @@ class Mancala:
             }
 
     def get_board_status(self):
-        pass
+        return self._pits.copy()
+
+    def set_board_status(self, current_player, pits: list):
+        self._pits = pits[:14]
+        self.set_current_player(current_player)
+        if not self._is_game_over():
+            self._game_over = False
 
     def __str__(self):
-
         p1s = self._players[PLAYER1]
         p2s = self._players[PLAYER2]
 
@@ -59,6 +64,14 @@ class Mancala:
 
     def current_player(self):
         return self._current_player
+
+    def set_current_player(self, p: int):
+        if p in [PLAYER1, PLAYER2]:
+            self._current_player = p
+        else:
+            e = Exception()
+            e.message("Not a valid player, must be mancala.PLAYER1 or mancala.PLAYER2")
+            raise e
 
     def play_turn(self, pit_number: int):
         if self._game_over:
@@ -99,7 +112,7 @@ class Mancala:
             pos = (pos + 1) % 14
 
         # end game if all current player's pits are empty
-        print("checking endgame status: "+str(self.get_player_pits(self._current_player)['pits']))
+        # print("checking endgame status: "+str(self.get_player_pits(self._current_player)['pits']))
         if sum(self.get_player_pits(self._current_player)['pits']) == 0:
             self.end_game()
 
@@ -114,7 +127,7 @@ class Mancala:
     def get_player_name(self, player_number: int):
         return self._players[player_number]
 
-    def get_score(self, player=PLAYER1):
+    def get_score(self, player: int = PLAYER1) -> int:
 
         if player == PLAYER1:
             return self._pits[PLAYER1_BANK]
@@ -165,6 +178,7 @@ class Mancala:
         return pos == 6 + 7*player
 
     def _is_game_over(self):
+        # private method that only evaluates the score pit statuses
         return sum(self._pits[0:6]) == 0 or sum(self._pits[7:13]) == 0
 
     def end_game(self):
@@ -178,8 +192,21 @@ class Mancala:
 
         self._game_over = True
 
+    # public method for determining whether the game is ended
     def is_game_over(self):
         return self._game_over
+
+    def get_valid_moves(self):
+        pits = enumerate(self.get_player_pits(self._current_player)['pits'])
+
+        return list(map(lambda x: x[0], filter(lambda x: x[1] > 0, pits)))
+
+        # ret = []
+        # for i in range(6):
+        #     if pits['pits'][i] > 0:
+        #         ret.append(i)
+        #
+        # return ret
 
 
 class PositionError(Exception):
